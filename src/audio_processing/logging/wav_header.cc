@@ -54,6 +54,7 @@ const uint32_t kFmtSubchunkSize = sizeof(FmtSubchunk) - sizeof(ChunkHeader);
 // Simple wav header. It does not include chunks that are not essential to read
 // audio samples.
 struct WavHeader {
+  WavHeader() = default;
   WavHeader(const WavHeader&) = default;
   WavHeader& operator=(const WavHeader&) = default;
   RiffHeader riff;
@@ -207,30 +208,30 @@ void WriteWavHeader(uint8_t* buf,
   RTC_CHECK(CheckWavParameters(num_channels, sample_rate, format,
                                bytes_per_sample, num_samples));
 
-//  auto header = rtc::MsanUninitialized<WavHeader>({});
-//  const size_t bytes_in_payload = bytes_per_sample * num_samples;
+  auto header = rtc::MsanUninitialized<WavHeader>(WavHeader());
+  const size_t bytes_in_payload = bytes_per_sample * num_samples;
 
-//  WriteFourCC(&header.riff.header.ID, 'R', 'I', 'F', 'F');
-//  WriteLE32(&header.riff.header.Size, RiffChunkSize(bytes_in_payload));
-//  WriteFourCC(&header.riff.Format, 'W', 'A', 'V', 'E');
+  WriteFourCC(&header.riff.header.ID, 'R', 'I', 'F', 'F');
+  WriteLE32(&header.riff.header.Size, RiffChunkSize(bytes_in_payload));
+  WriteFourCC(&header.riff.Format, 'W', 'A', 'V', 'E');
 
-//  WriteFourCC(&header.fmt.header.ID, 'f', 'm', 't', ' ');
-//  WriteLE32(&header.fmt.header.Size, kFmtSubchunkSize);
-//  WriteLE16(&header.fmt.AudioFormat, format);
-//  WriteLE16(&header.fmt.NumChannels, static_cast<uint16_t>(num_channels));
-//  WriteLE32(&header.fmt.SampleRate, sample_rate);
-//  WriteLE32(&header.fmt.ByteRate,
-//            ByteRate(num_channels, sample_rate, bytes_per_sample));
-//  WriteLE16(&header.fmt.BlockAlign, BlockAlign(num_channels, bytes_per_sample));
-//  WriteLE16(&header.fmt.BitsPerSample,
-//            static_cast<uint16_t>(8 * bytes_per_sample));
+  WriteFourCC(&header.fmt.header.ID, 'f', 'm', 't', ' ');
+  WriteLE32(&header.fmt.header.Size, kFmtSubchunkSize);
+  WriteLE16(&header.fmt.AudioFormat, format);
+  WriteLE16(&header.fmt.NumChannels, static_cast<uint16_t>(num_channels));
+  WriteLE32(&header.fmt.SampleRate, sample_rate);
+  WriteLE32(&header.fmt.ByteRate,
+            ByteRate(num_channels, sample_rate, bytes_per_sample));
+  WriteLE16(&header.fmt.BlockAlign, BlockAlign(num_channels, bytes_per_sample));
+  WriteLE16(&header.fmt.BitsPerSample,
+            static_cast<uint16_t>(8 * bytes_per_sample));
 
-//  WriteFourCC(&header.data.header.ID, 'd', 'a', 't', 'a');
-//  WriteLE32(&header.data.header.Size, static_cast<uint32_t>(bytes_in_payload));
+  WriteFourCC(&header.data.header.ID, 'd', 'a', 't', 'a');
+  WriteLE32(&header.data.header.Size, static_cast<uint32_t>(bytes_in_payload));
 
-//  // Do an extra copy rather than writing everything to buf directly, since buf
-//  // might not be correctly aligned.
-//  memcpy(buf, &header, kWavHeaderSize);
+  // Do an extra copy rather than writing everything to buf directly, since buf
+  // might not be correctly aligned.
+  memcpy(buf, &header, kWavHeaderSize);
 }
 
 bool ReadWavHeader(ReadableWav* readable,
@@ -239,55 +240,54 @@ bool ReadWavHeader(ReadableWav* readable,
                    WavFormat* format,
                    size_t* bytes_per_sample,
                    size_t* num_samples) {
-//  auto header = rtc::MsanUninitialized<WavHeader>({});
+  auto header = rtc::MsanUninitialized<WavHeader>(WavHeader());
 
-//  // Read RIFF chunk.
-//  if (readable->Read(&header.riff, sizeof(header.riff)) != sizeof(header.riff))
-//    return false;
-//  if (ReadFourCC(header.riff.header.ID) != "RIFF")
-//    return false;
-//  if (ReadFourCC(header.riff.Format) != "WAVE")
-//    return false;
+  // Read RIFF chunk.
+  if (readable->Read(&header.riff, sizeof(header.riff)) != sizeof(header.riff))
+    return false;
+  if (ReadFourCC(header.riff.header.ID) != "RIFF")
+    return false;
+  if (ReadFourCC(header.riff.Format) != "WAVE")
+    return false;
 
-//  // Find "fmt " and "data" chunks. While the official Wave file specification
-//  // does not put requirements on the chunks order, it is uncommon to find the
-//  // "data" chunk before the "fmt " one. The code below fails if this is not the
-//  // case.
-//  if (!FindWaveChunk(&header.fmt.header, readable, "fmt ")) {
-//    RTC_LOG(LS_ERROR) << "Cannot find 'fmt ' chunk.";
-//    return false;
-//  }
-//  if (!ReadFmtChunkData(&header.fmt, readable)) {
-//    RTC_LOG(LS_ERROR) << "Cannot read 'fmt ' chunk.";
-//    return false;
-//  }
-//  if (!FindWaveChunk(&header.data.header, readable, "data")) {
-//    RTC_LOG(LS_ERROR) << "Cannot find 'data' chunk.";
-//    return false;
-//  }
+  // Find "fmt " and "data" chunks. While the official Wave file specification
+  // does not put requirements on the chunks order, it is uncommon to find the
+  // "data" chunk before the "fmt " one. The code below fails if this is not the
+  // case.
+  if (!FindWaveChunk(&header.fmt.header, readable, "fmt ")) {
+    RTC_LOG(LS_ERROR) << "Cannot find 'fmt ' chunk.";
+    return false;
+  }
+  if (!ReadFmtChunkData(&header.fmt, readable)) {
+    RTC_LOG(LS_ERROR) << "Cannot read 'fmt ' chunk.";
+    return false;
+  }
+  if (!FindWaveChunk(&header.data.header, readable, "data")) {
+    RTC_LOG(LS_ERROR) << "Cannot find 'data' chunk.";
+    return false;
+  }
 
-//  // Parse needed fields.
-//  *format = static_cast<WavFormat>(ReadLE16(header.fmt.AudioFormat));
-//  *num_channels = ReadLE16(header.fmt.NumChannels);
-//  *sample_rate = ReadLE32(header.fmt.SampleRate);
-//  *bytes_per_sample = ReadLE16(header.fmt.BitsPerSample) / 8;
-//  const size_t bytes_in_payload = ReadLE32(header.data.header.Size);
-//  if (*bytes_per_sample == 0)
-//    return false;
-//  *num_samples = bytes_in_payload / *bytes_per_sample;
+  // Parse needed fields.
+  *format = static_cast<WavFormat>(ReadLE16(header.fmt.AudioFormat));
+  *num_channels = ReadLE16(header.fmt.NumChannels);
+  *sample_rate = ReadLE32(header.fmt.SampleRate);
+  *bytes_per_sample = ReadLE16(header.fmt.BitsPerSample) / 8;
+  const size_t bytes_in_payload = ReadLE32(header.data.header.Size);
+  if (*bytes_per_sample == 0)
+    return false;
+  *num_samples = bytes_in_payload / *bytes_per_sample;
 
-//  if (ReadLE32(header.riff.header.Size) < RiffChunkSize(bytes_in_payload))
-//    return false;
-//  if (ReadLE32(header.fmt.ByteRate) !=
-//      ByteRate(*num_channels, *sample_rate, *bytes_per_sample))
-//    return false;
-//  if (ReadLE16(header.fmt.BlockAlign) !=
-//      BlockAlign(*num_channels, *bytes_per_sample))
-//    return false;
+  if (ReadLE32(header.riff.header.Size) < RiffChunkSize(bytes_in_payload))
+    return false;
+  if (ReadLE32(header.fmt.ByteRate) !=
+      ByteRate(*num_channels, *sample_rate, *bytes_per_sample))
+    return false;
+  if (ReadLE16(header.fmt.BlockAlign) !=
+      BlockAlign(*num_channels, *bytes_per_sample))
+    return false;
 
-//  return CheckWavParameters(*num_channels, *sample_rate, *format,
-//                            *bytes_per_sample, *num_samples);
-    return true;
+  return CheckWavParameters(*num_channels, *sample_rate, *format,
+                            *bytes_per_sample, *num_samples);
 }
 
 }  // namespace webrtc

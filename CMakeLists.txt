@@ -51,3 +51,24 @@ target_include_directories(${PROJECT} PUBLIC
 )
 
 set_target_properties(${PROJECT} PROPERTIES LINKER_LANGUAGE CXX)
+
+option(BUILD_TESTS "Build the AEC3 test executable" OFF)
+
+if(BUILD_TESTS)
+    add_executable(aec3_test
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/aec3_test.cc
+    )
+
+    target_link_libraries(aec3_test PRIVATE ${PROJECT})
+
+    target_include_directories(aec3_test PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/api
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/audio_processing
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/audio_processing/logging
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/audio_processing/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/base/rtc_base
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/absl
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/common_audio
+    )
+endif()

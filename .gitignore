@@ -4,6 +4,10 @@
 
 # build
 .build/*
+.build-tests/*
 
 # Intellij
 .idea/*
+
+# Mac
+.DS_Store

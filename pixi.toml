@@ -32,5 +32,26 @@ outputs = [
     ".build/*.so",
 ]
 
+[feature.build.tasks.configure-test]
+cmd = [
+    "cmake",
+    "-GNinja",
+    "-S.",
+    "-B.build-tests",
+    "-DBUILD_TESTS=ON",
+]
+inputs = ["CMakeLists.txt"]
+outputs = [".build-tests/CMakeFiles/"]
+
+[feature.build.tasks.build-test]
+cmd = ["cmake", "--build", ".build-tests"]
+depends-on = ["configure-test"]
+inputs = ["CMakeLists.txt", "src/*", "tests/*"]
+outputs = [".build-tests/aec3_test"]
+
+[feature.build.tasks.run-test]
+cmd = ".build-tests/aec3_test"
+depends-on = ["build-test"]
+
 [environments]
 build = ["build"]
