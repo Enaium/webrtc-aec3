@@ -1,0 +1,36 @@
+[workspace]
+authors = ["Enaium <enaium@outlook.com>"]
+channels = ["conda-forge"]
+name = "aec3"
+platforms = ["osx-arm64", "win-64", "linux-64"]
+version = "0.1.0"
+
+[dependencies]
+cmake = ">=4.4.2,<5"
+
+[feature.build.dependencies]
+ninja = ">=1.13.2,<2"
+cxx-compiler = ">=1.11.0,<2"
+
+[feature.build.tasks.configure]
+cmd = [
+    "cmake",
+    "-GNinja",
+    "-S.",
+    "-B.build",
+]
+inputs = ["CMakeLists.txt"]
+outputs = [".build/CMakeFiles/"]
+
+[feature.build.tasks.build]
+cmd = ["cmake", "--build", ".build"]
+depends-on = ["configure"]
+inputs = ["CMakeLists.txt", "src/*"]
+outputs = [
+    ".build/*.dylib",
+    ".build/*.dll",
+    ".build/*.so",
+]
+
+[environments]
+build = ["build"]
