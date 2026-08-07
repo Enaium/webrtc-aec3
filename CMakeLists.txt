@@ -23,10 +23,16 @@ file(GLOB_RECURSE AEC3_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/**/*.h
 )
 
-# Exclude AVX2/SSE2 files on non-x86 platforms
+# Exclude SIMD files on non-x86 platforms
 if(NOT (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64"))
     list(FILTER AEC3_SRC EXCLUDE REGEX ".*_avx2\\.cc$")
     list(FILTER AEC3_SRC EXCLUDE REGEX ".*_sse2\\.cc$")
+    list(FILTER AEC3_SRC EXCLUDE REGEX ".*_sse\\.cc$")
+endif()
+
+# Exclude NEON files on non-ARM platforms
+if(NOT (CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64|ARM64"))
+    list(FILTER AEC3_SRC EXCLUDE REGEX ".*_neon\\.cc$")
 endif()
 
 add_library(${PROJECT} SHARED ${AEC3_SRC})
